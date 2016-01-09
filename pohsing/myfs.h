@@ -17,8 +17,6 @@
 #ifndef MY_FILE_SYSTEM_H
 #define MY_FILE_SYSTEM_H
 
-#define _GNU_SOURCE
-
 #include <unistd.h>
 #include <fcntl.h>
 #include <errno.h>

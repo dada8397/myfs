@@ -64,7 +64,7 @@ int myfs_open(const char *filesystem_name) {
     if (fp)
         myfs_close();
 
-    if (fp = fopen(filesystem_name, "rb+")) {
+    if ((fp = fopen(filesystem_name, "rb+"))) {
         load_filesystem();
 
         return FS_SUCCESS;
@@ -116,7 +116,7 @@ int myfs_file_close(int fd) {
     if (!valid_fd(fd))
         return FS_FAILURE;
 
-    int delete_index = 0;
+    //int delete_index = 0;
     file_entry_t** new_opened_file = NULL;
 
     if (opened_file_count > 1) {
