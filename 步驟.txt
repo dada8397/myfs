@@ -1,0 +1,167 @@
+////////////////////////
+// Requirement        //
+////////////////////////
+實現一系列類似fopen/fclose/fwrite等的API。
+將一個檔案視為一顆虛擬硬碟，透過實現的API來模擬檔案系統的操作。
+
+EX:
+┌─────┬────────┬────────┬─────┬────────┐
+│ ... │ File 1 │ File 2 │ ... │ File N │
+└─────┴────────┴────────┴─────┴────────┘
+
+////////////////////////
+// File System Layout //
+////////////////////////
+在一個完整的檔案系統中，必須包含三項元素
+1. 檔案系統資訊：最大容量、可用空間
+2. 檔案資訊：檔案大小、檔案屬性、檔案內容位移(在虛擬硬碟何處)
+3. 檔案內容
+
+大多的檔案系統可能採用以下布局
+┌─────────────────────────┐
+│ File System Information │
+╞═════════════════════════╡
+│ File Information * N    │
+╞═════════════════════════╡
+│ File Data        * N    │
+└─────────────────────────┘
+
+在File Information部分，根據不同需求可以採取不同的結構 (可以參考OS上課講義)
+1. 不做資料夾結構: 單層結構，類似Array一樣，只有一維。
+2. 要做資料夾結構: 樹狀結構，採用N元樹。
+
+////////////////////////
+// How to write it?   //
+////////////////////////
+基本上這個作業就是一個複雜化的檔案操作而已，所以用到的函數就是fopen/fclose等。
+
+主要的議題就是 該如何維護檔案資訊及內容
+
+假設File Information結構如下，且沒有要實現資料夾功能 (也就是使用單層結構)
+struct {
+    string name;
+    int size;
+    int attr;
+}
+接下來將以FileInfo[i]來代表第i個File Information
+
+最簡單的步驟
+* 建立虛擬硬碟
+  - 寫入File System Information
+  - 寫入N個File Information，且每個都初始化為空 (也就是代表這個檔案系統，檔案最多只能N個)
+* 建立檔案
+  - 假設 FileInfo[e] 尚未被使用
+  - 初始化檔案大小、屬性等並寫入 FileInfo[e]
+* 寫入檔案
+  - 假設要修改的檔案資訊位於 FileInfo[m]
+  - 將檔案內容插入 File Data 起點 + Sum(FileInfo[i].size, 0, m - 1) 處
+* 讀取檔案
+  - 你知道的
+* 刪除檔案
+  - 假設要刪除的檔案資訊位於 FileInfo[d]
+  - 將 FileInfo[d] 標記為未使用並清空
+  - 將 File Data 起點 + Sum(FileInfo[i].size, 0, m - 1) 處的檔案內容移除
+
+假如要實現資料夾功能，也可以跟上面一樣使用相同的結構
+但採用樹狀結構在搜尋指定File Information時會較有效率
+
+void delete_data(int offset, int delete_size) {
+    unsigned char move_buffer[BUFFER_SIZE];
+    
+    int move_size = filesystem_info.free_offset - (offset + delete_size);
+    int read_offset = offset + delete_size;
+    int write_offset = offset;
+    while(move_size) {
+        int current_move_size = (move_size < BUFFER_SIZE) ? move_size : BUFFER_SIZE;
+
+        fseek(fp, read_offset, SEEK_SET);
+        fread(move_buffer, 1, current_move_size, fp);
+
+        fseek(fp, write_offset, SEEK_SET);
+        fwrite(move_buffer, 1, current_move_size, fp);
+
+        move_size -= current_move_size;
+        read_offset += current_move_size;
+        write_offset += current_move_size;
+    }
+}
+
+int insert_data(int offset, const unsigned char *buffer, int insert_size) {
+    unsigned char move_buffer[BUFFER_SIZE];
+    
+    int move_size = filesystem_info.free_offset - offset;
+    int read_end_offset = filesystem_info.free_offset;
+    while(move_size) {
+        int current_move_size = (move_size < BUFFER_SIZE) ? move_size : BUFFER_SIZE;
+        int read_offset = read_end_offset - current_move_size;
+        int write_offset = read_offset + insert_size;
+
+        fseek(fp, read_offset, SEEK_SET);
+        fread(move_buffer, 1, current_move_size, fp);
+
+        fseek(fp, write_offset, SEEK_SET);
+        fwrite(move_buffer, 1, current_move_size, fp);
+
+        move_size -= current_move_size;
+        read_end_offset -= current_move_size;
+    }
+
+    fseek(fp, offset, SEEK_SET);
+    return fwrite(buffer, 1, insert_size, fp);
+}
+
+/*
+[ Bonus ] Dynamic Shared Library
+
+1. 對 myfs 系列的 API 分檔 (EX: myfs.c)
+2. 編譯指令 gcc -fPIC -shared myfs.c -o myfs.so
+3. 將 備註1 的程式碼加入 main.c 中
+4. 在 main 的最一開始呼叫 load_apis (請參考 備註2)
+*/
+
+///////////////////
+/////// 備註1 //////
+///////////////////
+/* Function Pointer*/
+int (*myfs_create)(const char *filesystem_name, int max_size);
+int (*myfs_destroy)(const char *filesystem_name);
+int (*myfs_open)(const char *filesystem_name);
+int (*myfs_close)(void);
+int (*myfs_file_open)(const char *filename);
+int (*myfs_file_close)(int fd);
+int (*myfs_file_create)(const char *filename);
+int (*myfs_file_delete)(const char *filename);
+int (*myfs_file_read)(int fd, char *buffer, int count);
+int (*myfs_file_write)(int fd, char *buffer, int count);
+int (*myfs_mkdir)(const char *filename);
+int (*myfs_rmdir)(const char *filename);
+
+/* Load function address dynamically */
+void load_apis(void) {
+    void* handle = dlopen("./myfs.so", RTLD_LAZY);
+
+    myfs_create = (int (*)(const char*, int)) dlsym(handle, "myfs_create");
+    myfs_destroy = (int (*)(const char*)) dlsym(handle, "myfs_destroy");
+    myfs_open = (int (*)(const char*)) dlsym(handle, "myfs_open");
+    myfs_close = (int (*)(void)) dlsym(handle, "myfs_close");
+    myfs_file_open = (int (*)(const char*)) dlsym(handle, "myfs_file_open");
+    myfs_file_close = (int (*)(int)) dlsym(handle, "myfs_file_close");
+    myfs_file_create = (int (*)(const char*)) dlsym(handle, "myfs_file_create");
+    myfs_file_delete = (int (*)(const char*)) dlsym(handle, "myfs_file_delete");
+    myfs_file_read = (int (*)(int, char*, int)) dlsym(handle, "myfs_file_read");
+    myfs_file_write = (int (*)(int, char*, int)) dlsym(handle, "myfs_file_write");
+    myfs_mkdir = (int (*)(const char*)) dlsym(handle, "myfs_mkdir");
+    myfs_rmdir = (int (*)(const char*)) dlsym(handle, "myfs_rmdir");
+}
+
+///////////////////
+/////// 備註2 //////
+///////////////////
+/* Entry Point */
+int main(int argc, char *argv[]) {
+    load_apis();
+
+    ...
+
+    return 0;
+}
