@@ -443,7 +443,7 @@ void insert_child(file_entry_t *parent, file_entry_t new_entry) {
 
 void delete_data(int offset, int delete_size) {
     char move_buffer[BUFFER_SIZE];
-    
+
     int move_size = filesystem_info.free_offset - (offset + delete_size);
     int read_offset = offset + delete_size;
     int write_offset = offset;
@@ -464,7 +464,7 @@ void delete_data(int offset, int delete_size) {
 
 int insert_data(int offset, const char *buffer, int insert_size) {
     char move_buffer[BUFFER_SIZE];
-    
+
     int move_size = filesystem_info.free_offset - offset;
     int read_end_offset = filesystem_info.free_offset;
     while(move_size) {
