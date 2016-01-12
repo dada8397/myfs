@@ -73,9 +73,6 @@ typedef struct myfs_inode {
 } myfs_inode_t;
 
 /* Block Structure */
-typedef struct myfs_block {
-
-} myfs_block_t;
 
 /* File System Prototypes */
 int myfs_create(const char *filesystem_name, int max_size);

@@ -6,11 +6,12 @@
 
 
 /* Parameters */
-FILE *fptr = NULL;
 
 /* Function Prototypes */
 
 int myfs_create(const char *filesystem_name, int max_size){
+    printf("Init start.\n");
+    fflush(stdout);
     myfs_superblock_t superblock = {0};
     myfs_inode_t inode[max_size / MAX_BLOCK_SIZE] = {0};
 
@@ -31,12 +32,18 @@ int myfs_create(const char *filesystem_name, int max_size){
     uint inode_bitmap[superblock.inode_bitmap_count] = {0};
     uint block_bitmap[superblock.block_bitmap_count] = {0};
 
+    printf("Init.\n");
+
     FILE *new_fs_file = fopen(filesystem_name, "wb");
     if(new_fs_file){
         fwrite(&superblock, sizeof(myfs_superblock_t), 1, new_fs_file);
+        printf("Write superblock.\n");
         fwrite(&inode_bitmap, sizeof(uint), superblock.inode_bitmap_count, new_fs_file);
+        printf("Write inode bitmap.\n");
         fwrite(&block_bitmap, sizeof(uint), superblock.block_bitmap_count, new_fs_file);
+        printf("Write block bitmap.\n");
         fwrite(&inode, sizeof(myfs_inode_t), max_size / MAX_BLOCK_SIZE, new_fs_file);
+        printf("Write inode.\n");
         return SUCCESS;
     }
 
