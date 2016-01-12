@@ -52,9 +52,7 @@ void load_apis(void) {
 int main(int argc, char const *argv[]) {
     fs_loaded = FALSE;
     file_loaded = FALSE;
-    printf("Load API.\n");
     load_apis();
-    printf("Create.\n");
     myfs_create("myfs", 1048576);
     return 0;
 }

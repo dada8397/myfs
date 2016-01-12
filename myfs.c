@@ -4,16 +4,14 @@
 #include <stdlib.h>
 #include <string.h>
 
-
 /* Parameters */
 
 /* Function Prototypes */
 
+/* Create File System Function */
 int myfs_create(const char *filesystem_name, int max_size){
-    printf("Init start.\n");
-    fflush(stdout);
     myfs_superblock_t superblock = {0};
-    myfs_inode_t inode[max_size / MAX_BLOCK_SIZE] = {0};
+    myfs_inode_t *inode = (myfs_inode_t*) calloc((max_size / MAX_BLOCK_SIZE), sizeof(myfs_inode_t));
 
     superblock.max_size = max_size;
 
@@ -29,23 +27,22 @@ int myfs_create(const char *filesystem_name, int max_size){
                             + superblock.block_bitmap_count;
     superblock.block_offset = superblock.inode_offset + superblock.inode_total;
 
-    uint inode_bitmap[superblock.inode_bitmap_count] = {0};
-    uint block_bitmap[superblock.block_bitmap_count] = {0};
-
-    printf("Init.\n");
+    uint *inode_bitmap = (uint*)calloc(superblock.inode_bitmap_count, sizeof(uint));
+    uint *block_bitmap = (uint*)calloc(superblock.block_bitmap_count, sizeof(uint));
 
     FILE *new_fs_file = fopen(filesystem_name, "wb");
     if(new_fs_file){
         fwrite(&superblock, sizeof(myfs_superblock_t), 1, new_fs_file);
-        printf("Write superblock.\n");
-        fwrite(&inode_bitmap, sizeof(uint), superblock.inode_bitmap_count, new_fs_file);
-        printf("Write inode bitmap.\n");
-        fwrite(&block_bitmap, sizeof(uint), superblock.block_bitmap_count, new_fs_file);
-        printf("Write block bitmap.\n");
-        fwrite(&inode, sizeof(myfs_inode_t), max_size / MAX_BLOCK_SIZE, new_fs_file);
-        printf("Write inode.\n");
+        fwrite(inode_bitmap, sizeof(uint), superblock.inode_bitmap_count, new_fs_file);
+        fwrite(block_bitmap, sizeof(uint), superblock.block_bitmap_count, new_fs_file);
+        fwrite(inode, sizeof(myfs_inode_t), superblock.inode_total, new_fs_file);
+        fclose(new_fs_file);
         return SUCCESS;
     }
 
     return FAILURE;
+}
+
+int myfs_destroy(const char *filesystem_name){
+    return (remove(filesystem_name) == 0) ? SUCCESS : FAILURE;
 }
