@@ -5,10 +5,18 @@
 #include <string.h>
 
 /* Parameters */
+FILE *fptr = NULL;
+myfs_superblock_t superblock_t;
 
 /* Function Prototypes */
+void load_superblock(void);
+void write_superblock(void);
+void load_inode(void);
+void write_inode(void);
+void load_block(void);
+void write_block(void);
 
-/* Create File System Function */
+/* Basic File System Function */
 int myfs_create(const char *filesystem_name, int max_size){
     myfs_superblock_t superblock = {0};
     myfs_inode_t *inode = (myfs_inode_t*) calloc((max_size / MAX_BLOCK_SIZE), sizeof(myfs_inode_t));
@@ -45,4 +53,15 @@ int myfs_create(const char *filesystem_name, int max_size){
 
 int myfs_destroy(const char *filesystem_name){
     return (remove(filesystem_name) == 0) ? SUCCESS : FAILURE;
+}
+
+int myfs_open(const char *filesystem_name){
+    if (fptr)
+        myfs_close();
+
+    if ((fptr = fopen(filesystem_name, "rb+"))) {
+        load_superblock();
+        return SUCCESS;
+    }
+    return FAILURE;
 }

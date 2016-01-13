@@ -62,6 +62,8 @@ typedef struct myfs_superblock {
 typedef struct myfs_inode {
     uint index;
     uint mode;
+    uint parent;
+    uint prev;
     uint next;
     union {
         uint child;

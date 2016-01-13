@@ -53,6 +53,5 @@ int main(int argc, char const *argv[]) {
     fs_loaded = FALSE;
     file_loaded = FALSE;
     load_apis();
-    myfs_create("myfs", 1048576);
     return 0;
 }
