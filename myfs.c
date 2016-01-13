@@ -6,7 +6,7 @@
 
 /* Parameters */
 FILE *fptr = NULL;
-myfs_superblock_t superblock_t;
+myfs_superblock_t superblock_info;
 
 /* Function Prototypes */
 void load_superblock(void);
@@ -58,10 +58,42 @@ int myfs_destroy(const char *filesystem_name){
 int myfs_open(const char *filesystem_name){
     if (fptr)
         myfs_close();
-
     if ((fptr = fopen(filesystem_name, "rb+"))) {
         load_superblock();
         return SUCCESS;
     }
     return FAILURE;
+}
+
+int myfs_close(){
+    if (fptr) {
+        write_superblock();
+        fclose(fptr);
+        fptr = NULL;
+    }
+    return SUCCESS;
+}
+
+
+
+
+
+
+
+
+
+
+
+/* Helping Functions */
+
+void load_superblock(void) {
+    fseek(fptr, 0, SEEK_SET);
+    fread(&superblock_info, sizeof(myfs_superblock_t), 1, fptr);
+    load_inode();
+}
+
+void write_superblock(void) {
+    fseek(fptr, 0, SEEK_SET);
+    fwrite(&superblock_info, sizeof(myfs_superblock_t), 1, fptr);
+    write_inode();
 }

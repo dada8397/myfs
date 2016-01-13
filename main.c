@@ -2,11 +2,11 @@
 #include <stdlib.h>
 #include <string.h>
 #include <dlfcn.h>
+#include <dirent.h>
+#include <ncurses.h>
 
 typedef int                     BOOL;
 typedef unsigned int            uint;
-#define TRUE                    (1)
-#define FALSE                   (0)
 
 #define FS_SUCCESS              (0)
 #define FS_FAILURE              (-1)
@@ -31,8 +31,23 @@ char loaded_fs_name[512];
 char loaded_file_name[512];
 
 int loaded_fd;
+char command;
 
-void load_apis(void) {
+/* Functions Prototypes */
+void load_apis(void);
+void show_infomation(void);
+void show_filesystems(void);
+void show_command(void);
+
+int main(int argc, char const *argv[]) {
+    fs_loaded = FALSE;
+    file_loaded = FALSE;
+    load_apis();
+    show_infomation();
+    return 0;
+}
+
+void load_apis(void){
     void* handle = dlopen("./myfs.so", RTLD_LAZY);
 
     myfs_create = (int (*)(const char*, int)) dlsym(handle, "myfs_create");
@@ -49,9 +64,113 @@ void load_apis(void) {
     myfs_rmdir = (int (*)(const char*)) dlsym(handle, "myfs_rmdir");
 }
 
-int main(int argc, char const *argv[]) {
-    fs_loaded = FALSE;
-    file_loaded = FALSE;
-    load_apis();
-    return 0;
+void show_infomation(void){
+    printf("====================Welcome to virtual disk management!====================\n");
+    printf("This is your filesystem below:\n");
+    show_filesystems();
+    show_command();
+    printf("\n");
+}
+
+void show_filesystems(void){
+    DIR *dir;
+    struct dirent *ent;
+    if((dir = opendir("./myfs/")) != NULL) {
+        while((ent = readdir(dir)) != NULL) {
+            if(strcmp(ent->d_name, ".") || strcmp(ent->d_name, "..")){
+            }else{
+                printf("%s\n", ent->d_name);
+            }
+        }
+        closedir(dir);
+    }else{
+        perror("");
+    }
+}
+
+void show_command(void){
+    printf("There are somthing you can do:\n");
+    printf("C : \e[4mC\e[mreate a filesystem.\n");
+    printf("L : \e[4mL\e[moad a filesystem.\n");
+    printf("D : \e[4mD\e[melete a filesystem.\n");
+    printf("Please choose a command:");
+    scanf("%c%*c", &command);
+    switch(command) {
+        case 'C':{
+            printf("Please input the filesystem name:");
+            char fs_name[512];
+            scanf("%s%*c", fs_name);
+            char fs_path[512] = "./myfs/";
+            strcat(fs_path, fs_name);
+            FILE *fptr;
+            fptr = fopen(fs_path, "rb+");
+            if(fptr != NULL){
+                printf("Filesystem exist!\n");
+                fclose(fptr);
+                show_command();
+                break;
+            }else{
+                printf("Please input the filesystem size:");
+                int fs_size;
+                scanf("%d%*c", &fs_size);
+                if(myfs_create(fs_path, fs_size)){
+                    printf("Create filesystem successfully!\n");
+                    show_command();
+                    break;
+                }else{
+                    printf("Create filesystem failed!\n");
+                    show_command();
+                    break;
+                }
+            }
+            break;
+        }
+        case 'L':{
+            printf("Please input the filesystem name:");
+            char fs_name[512];
+            scanf("%s%*c", fs_name);
+            char fs_path[512] = "./myfs/";
+            strcat(fs_path, fs_name);
+            FILE *fptr;
+            fptr = fopen(fs_path, "rb+");
+            if(fptr != NULL){
+                /* Load Filesystem */
+            }else{
+                printf("Filesystem doesn't exist!\n");
+                show_command();
+                break;
+            }
+            break;
+        }
+        case 'D':{
+            printf("Please input the filesystem name:");
+            char fs_name[512];
+            scanf("%s%*c", fs_name);
+            char fs_path[512] = "./myfs/";
+            strcat(fs_path, fs_name);
+            FILE *fptr;
+            fptr = fopen(fs_path, "rb+");
+            if(fptr != NULL){
+                if(myfs_destroy(fs_path)){
+                    printf("Delete filesystem successfully!\n");
+                    show_command();
+                    break;
+                }else{
+                    printf("Delete filesystem failed!\n");
+                    show_command();
+                    break;
+                }
+            }else{
+                printf("Filesystem doesn't exist!\n");
+                show_command();
+                break;
+            }
+            break;
+        }
+        default:{
+            printf("\nCommand %c not found!\n", command);
+            show_command();
+            break;
+        }
+    }
 }
