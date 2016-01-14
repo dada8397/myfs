@@ -7,8 +7,9 @@
 /* Parameters */
 FILE *fptr = NULL;
 myfs_superblock_t superblock_info;
-myfs_inode_t *root = NULL;
+myfs_inode_t root, current;
 uint block_buf[MAX_BLOCK_SIZE / sizeof(uint)];
+uint mask = 1;
 
 /* Function Prototypes */
 void load_superblock(void);
@@ -67,34 +68,50 @@ int myfs_destroy(const char *filesystem_name){
 }
 
 int myfs_open(const char *filesystem_name){
-    if (fptr)
+    if(fptr)
         myfs_close();
-    if ((fptr = fopen(filesystem_name, "rb+"))) {
+    if((fptr = fopen(filesystem_name, "rb+"))){
         fseek(fptr, 0, SEEK_SET);
         fread(&superblock_info, sizeof(myfs_superblock_t), 1, fptr);
-        // Load Inode
-        fseek(fptr, superblock_info.inode_offset, SEEK_SET);
-        fread(root, sizeof(myfs_inode_t), 1, fptr);
         return SUCCESS;
     }
     return FAILURE;
 }
 
 int myfs_close(){
-    if (fptr) {
+    if(fptr){
         fseek(fptr, 0, SEEK_SET);
         fwrite(&superblock_info, sizeof(myfs_superblock_t), 1, fptr);
-        // Write Inode
-
         fclose(fptr);
         fptr = NULL;
     }
     return SUCCESS;
 }
 
-int myfs_file_open(const char *filename);
+int myfs_file_open(const char *filename){
+    return SUCCESS;
+}
 int myfs_file_close(int fd);
-int myfs_file_create(const char *filename);
+int myfs_file_create(const char *filename){
+    char *name = basename(strdupa(filename));
+    
+    return SUCCESS;
+}
 int myfs_file_delete(const char *filename);
 int myfs_file_read(int fd, char *buffer, int count);
 int myfs_file_write(int fd, char *buffer, int count);
+int myfs_list_files(void){
+    fseek(fptr, superblock_info.inode_offset, SEEK_SET);
+    fread(&root, sizeof(myfs_inode_t), 1, fptr);
+    current = root;
+    if(current.index != 0){
+        printf("..\n.\n");
+    }
+    printf("%s\n", current.name);
+    while(current.next != 0){
+        printf("%s\n", current.name);
+        fseek(fptr, current.next, SEEK_SET);
+        fread(&current, sizeof(myfs_inode_t), 1, fptr);
+    }
+    return SUCCESS;
+}

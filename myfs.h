@@ -95,5 +95,6 @@ int myfs_file_write(int fd, char *buffer, int count);
 /* File Prototypes of Extra Functions*/
 int myfs_mkdir(const char *filename);
 int myfs_rmdir(const char *filename);
+int myfs_list_files(void);
 
 #endif
