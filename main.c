@@ -212,10 +212,15 @@ void show_file_command(void){
     switch(command){
         case 'L':{
             myfs_list_files();
+            show_file_command();
             break;
         }
         case 'C':{
-            myfs_file_create("test");
+            printf("Please enter a file name:");
+            char file_name[512];
+            scanf("%s%*c", file_name);
+            myfs_file_create(file_name);
+            show_file_command();
             break;
         }
         case 'D':{

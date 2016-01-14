@@ -20,16 +20,13 @@ typedef int                     BOOL;
 #define BUFFER_SIZE             (8192)
 #define ENTRY_EOF               (0x1b)
 
-// Superblock Constants
+// File Constants
 #define MAX_FILE_NAME           (255)
 #define MAX_FILE_PATH           (4096)
 #define MAX_FILE_AMOUNT         (1024)
-
-// Inode Constants
-#define INODE_BLOCK_N           (15)
-
-// Block Constants
-#define MAX_BLOCK_SIZE          (4096)
+#define MAX_FILE_SIZE           (4096)
+#define FILE_EXIST              (1)
+#define FILE_DELETED            (0)
 
 #define FAILURE                 (-1)
 #define SUCCESS                 (0)
@@ -44,35 +41,20 @@ typedef enum{
 typedef struct myfs_superblock {
     uint max_size;
     uint unused_size;
-
-    uint inode_bitmap_offset;
-    uint inode_bitmap_count;
-    uint inode_offset;
-    uint inode_total;
-    uint inode_unused;
-
-    uint block_bitmap_offset;
-    uint block_bitmap_count;
-    uint block_offset;
-    uint block_total;
-    uint block_unused;
+    uint file_count;
+    uint file_offset;
 } myfs_superblock_t;
 
 /* Inode Structure */
-typedef struct myfs_inode {
+typedef struct myfs_file {
     uint index;
-    uint mode;
-    uint parent;
+    uint offset;
     uint prev;
     uint next;
-    union {
-        uint child;
-        uint size;
-    };
-    uint block_count;
-    uint block[INODE_BLOCK_N];
+    uint mode;
+    uint content[MAX_FILE_SIZE];
     char name[MAX_FILE_NAME];
-} myfs_inode_t;
+} myfs_file_t;
 
 /* Block Structure */
 
