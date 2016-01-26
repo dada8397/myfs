@@ -42,6 +42,7 @@ typedef struct myfs_superblock {
     uint max_size;
     uint unused_size;
     uint file_count;
+    uint file_amount;
     uint file_offset;
 } myfs_superblock_t;
 
@@ -49,10 +50,9 @@ typedef struct myfs_superblock {
 typedef struct myfs_file {
     uint index;
     uint offset;
-    uint prev;
-    uint next;
     uint mode;
-    uint content[MAX_FILE_SIZE];
+    uint size;
+    char content[MAX_FILE_SIZE];
     char name[MAX_FILE_NAME];
 } myfs_file_t;
 

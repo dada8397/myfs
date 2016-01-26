@@ -189,6 +189,7 @@ void show_main_command(void){
         }
         case 'Q':{
             printf("Bye bye!\n");
+            myfs_close();
             break;
         }
         default:{
@@ -205,7 +206,8 @@ void show_file_command(void){
     printf("L : \e[4mL\e[mist files.\n");
     printf("C : \e[4mC\e[mreate a file.\n");
     printf("D : \e[4mD\e[melete a file.\n");
-    printf("E : \e[4mE\e[msit a file.\n");
+    printf("O : \e[4mO\e[mpen a file.\n");
+    printf("E : \e[4mE\e[mdit a file.\n");
     printf("Q : \e[4mQ\e[muit the system.\n");
     printf("Please choose a command:");
     scanf("%c%*c", &command);
@@ -220,17 +222,48 @@ void show_file_command(void){
             char file_name[512];
             scanf("%s%*c", file_name);
             myfs_file_create(file_name);
+            printf("Create file success!\n");
             show_file_command();
             break;
         }
         case 'D':{
+            printf("Please enter a file name:");
+            char file_name[512];
+            scanf("%s%*c", file_name);
+            if(!myfs_file_delete(file_name)){
+                printf("Delete file success!\n");
+                show_file_command();
+            }else{
+                printf("Delete file failed!\n");
+                show_file_command();
+            }
             break;
         }
         case 'E':{
+            printf("Please enter a file name:");
+            char file_name[512];
+            scanf("%s%*c", file_name);
+            myfs_file_open(file_name);
+            printf("Please input something:");
+            char buffer[1024];
+            scanf("%s%*c", buffer);
+            myfs_file_write(1, buffer, 1);
+            printf("Edit file success!\n");
+            show_file_command();
+            break;
+        }
+        case 'O':{
+            printf("Please enter a file name:");
+            char file_name[512];
+            scanf("%s%*c", file_name);
+            myfs_file_open(file_name);
+            myfs_file_read(0, file_name, 0);
+            show_file_command();
             break;
         }
         case 'Q':{
             printf("Bye bye!\n");
+            myfs_close();
             break;
         }
         default:{
